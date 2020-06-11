@@ -33,6 +33,36 @@ def index():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    """
+    Function that takes in a post where the user reaches out the route via POST or GET and lets the user register
+    for an account
+    """
+    session.clear()
+    if request.method == "POST":
+        if not request.form.get("username"):
+            return render_template("error.html", message="Please provide a username")
+
+        user_check = db.execute("SELECT * FROM users WHERE username = :username",
+                               {"username": request.form.get("username")}).fetchone()
+        if user_check:
+            return render_template("error.html", message="This username already exists")
+        elif not request.form.get("password"):
+            return render_template("error.html", message="Please provide a password")
+        elif not request.form.get("confirmation"):
+            return render_template("error.html", message="Confirm your password")
+        elif not request.form.get("password") == request.form.get("confirmation"):
+            return render_template("error.html", message="Passwords do not match, please check again")
+        hash_pass = HashPassword()
+        hashed_password = hash_pass.hash_password(request.form.get("password"))
+
+        # Insert new user into DB
+        db.execute("INSERT INTO users (username, hash) VALUES (:username, :password)",
+                   {"username": request.form.get("username"),
+                    "password": hashed_password})
+        db.commit()
+        return redirect("/login")
+    else:
+        return render_template("register.html")
 
 
 @app.route("/login", methods=["POST"])

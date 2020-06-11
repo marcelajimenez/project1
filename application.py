@@ -36,6 +36,7 @@ def register():
     """
     Function that takes in a post where the user reaches out the route via POST or GET and lets the user register
     for an account
+    :return: error or a new user registered for an account
     """
     session.clear()
     if request.method == "POST":
@@ -67,7 +68,29 @@ def register():
 
 @app.route("/login", methods=["POST"])
 def login():
-    return "Project 1: TODO"
+    """
+    Function that lets the user log in to the website, gets the username and password from the user's input and checks
+    that they are both valid
+    :return: an error if the username and password do not match, else logs in for the user
+    """
+    session.clear()
+    username = request.form.get("username")
+    if request.method == "POST":
+        if not request.form.get("username"):
+            return render_template("error.html", message="Please provide a username")
+        elif not request.form.get("password"):
+            return render_template("error.html", message="Please provide a password")
+        rows = db.execute("SELECT * FROM users WHERE username = :username",
+                          {"username": username})
+        result = rows.fetchone()
+        hash_pass = HashPassword()
+        if result == None or not hash_pass.verify_password(result[2], request.form.get("password")):
+            return render_template("error.html", message="Invalid username and/or password")
+        session["user_id"] = result[0]
+        session["user_name"] = result[1]
+        return redirect("/")
+    else:
+        return render_template("login.html")
 
 
 @app.route("/logout", methods=["POST"])

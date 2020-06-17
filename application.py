@@ -6,7 +6,6 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from decorator import login_required
 from HashPassword import HashPassword
 
-
 app = Flask(__name__)
 os.environ['DATABASE_URL'] = "postgres://fhtmmpjjvejjxs:a4fc62fd0a563452b14a6900423cd903199060e28207fb93fc06ccf9ae034723@ec2-3-222-30-53.compute-1.amazonaws.com:5432/d11g6lfpjmbrjn"
 
@@ -77,7 +76,7 @@ def register():
         if username is None:
             return render_template("error.html", message="Please provide username")
         check_user = db.execute("SELECT * FROM users WHERE username = :username",
-                               {"username": username}).fetchone()
+                                {"username": username}).fetchone()
         if check_user:
             return render_template("error.html", message="The username provided already exists")
         elif password is None:
@@ -97,3 +96,11 @@ def register():
         return render_template("register.html")
 
 
+@app.route("/logout")
+def logout():
+    """
+    User logs out of the website
+    :return: takes the user back to the home page
+    """
+    session.clear()
+    return redirect("/")

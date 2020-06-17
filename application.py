@@ -61,3 +61,39 @@ def login():
         return redirect("/")
     else:
         return render_template("login.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """
+    The link where the user can register an account for the website
+    :return: takes back the user to the login page to login with a new account created
+    """
+    session.clear()
+    username = request.form.get("name")
+    password = request.form.get("password")
+    confirmation = request.form.get("confirmation")
+    if request.method == "POST":
+        if username is None:
+            return render_template("error.html", message="Please provide username")
+        check_user = db.execute("SELECT * FROM users WHERE username = :username",
+                               {"username": username}).fetchone()
+        if check_user:
+            return render_template("error.html", message="The username provided already exists")
+        elif password is None:
+            return render_template("error.html", message="Please provide a password")
+        elif confirmation is None:
+            return render_template("error.html", message="Please confirm password")
+        elif not password == confirmation:
+            return render_template("error.html", message="Passwords do not match, please check again")
+        hash_password = HashPassword()
+        hashed_password = hash_password.hash_password(password=password)
+        # Insert into the database
+        db.execute("INSERT INTO users (username, hash) VALUES (:username, :password)",
+                   {"username": username, "password": hashed_password})
+        db.commit()
+        return redirect("/login")
+    else:
+        return render_template("register.html")
+
+

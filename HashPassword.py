@@ -6,6 +6,7 @@ import binascii
 class HashPassword:
     """
     Class that creates a hash password
+    :return: a hash for the password provided
     """
     def hash_password(self, password):
         """Hash a password for storing."""
@@ -16,7 +17,10 @@ class HashPassword:
         return (salt + pwdhash).decode('ascii')
 
     def verify_password(self, stored_password, provided_password):
-        """Verify a stored password against one provided by user"""
+        """
+        Verify a stored password against one provided by user
+        :return: verification of the password
+        """
         salt = stored_password[:64]
         stored_password = stored_password[64:]
         pwdhash = hashlib.pbkdf2_hmac('sha512',

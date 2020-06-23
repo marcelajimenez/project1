@@ -104,3 +104,24 @@ def logout():
     """
     session.clear()
     return redirect("/")
+
+
+@app.route("/search", methods=["GET"])
+@login_required
+def search():
+    """
+    Link where the user can search for book reviews using isbn, title, author
+    :return: information on the book
+    """
+    book_input = request.args.get("book")
+    if book_input is None:
+        return render_template("error.html", message="Please provide a book")
+    book_text = "%{}%".format(book).lower()
+    db_result = db.execute("SELECT isbn, LOWER(title), LOWER(author), year FROM books WHERE \
+                        isbn LIKE :book_text OR title LIKE :book_text OR \
+                        author LIKE :book_text LIMIT 10", {"query": book_text})
+    if db_result.rowcount == 0:
+        return render_template("error.html", message="There are no books with this description")
+    books = db_result.fetchall()
+    return render_template("results.html", books=books)
+

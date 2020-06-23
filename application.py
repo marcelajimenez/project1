@@ -7,7 +7,8 @@ from decorator import login_required
 from HashPassword import HashPassword
 
 app = Flask(__name__)
-os.environ['DATABASE_URL'] = "postgres://fhtmmpjjvejjxs:a4fc62fd0a563452b14a6900423cd903199060e28207fb93fc06ccf9ae034723@ec2-3-222-30-53.compute-1.amazonaws.com:5432/d11g6lfpjmbrjn"
+os.environ[
+    'DATABASE_URL'] = "postgres://fhtmmpjjvejjxs:a4fc62fd0a563452b14a6900423cd903199060e28207fb93fc06ccf9ae034723@ec2-3-222-30-53.compute-1.amazonaws.com:5432/d11g6lfpjmbrjn"
 
 # Check for environment variable
 if not os.getenv("DATABASE_URL"):
@@ -125,3 +126,52 @@ def search():
     books = db_result.fetchall()
     return render_template("results.html", books=books)
 
+
+@app.route("/book/<isbn>", methods=['GET', 'POST'])
+@login_required
+def book(isbn):
+    """
+    Function that saves the review from the user
+    :return: the web page updated with the new review
+    """
+    if request.method == "POST":
+        user = session["user_id"]
+        rating = request.form.get("rating")
+        comment = request.form.get("comment")
+        db_result = db.execute("SELECT id FROM books WHERE isbn = :isbn", {"isbn": isbn})
+        book_id = db_result.fetchone()
+        book_id = book_id[0]
+        row_check = db.execute("SELECT * FROM reviews WHERE user_id = :user_id AND book_id = :book_id",
+                               {"user_id": user, "book_id": book_id})
+        if row_check.rowcount == 1:
+            flash('You already submitted a review for this book', 'warning')
+            return redirect("/book/" + isbn)
+        rating = int(rating)
+        db.execute("INSERT INTO reviews (user_id, book_id, comment, rating) VALUES \
+                    (:user_id, :book_id, :comment, :rating)",
+                   {"user_id": user, "book_id": bookId, "comment": comment, "rating": rating})
+        db.commit()
+        flash('Review submitted!', 'info')
+        return redirect("/book/" + isbn)
+    else:
+        row = db.execute("SELECT isbn, title, author, year FROM books WHERE \
+                        isbn = :isbn", {"isbn": isbn})
+        book_info = row.fetchall()
+        key = os.getenv("GOODREADS_KEY")
+        query = requests.get("https://www.goodreads.com/book/review_counts.json",
+                             params={"key": key, "isbns": isbn})
+        response = query.json()
+        response = response['books'][0]
+        book_info.append(response)
+        row = db.execute("SELECT id FROM books WHERE isbn = :isbn", {"isbn": isbn})
+        book = row.fetchone()  # (id,)
+        book = book[0]
+        results = db.execute("SELECT users.username, comment, rating, \
+                            to_char(time, 'DD Mon YY - HH24:MI:SS') as time \
+                            FROM users \
+                            INNER JOIN reviews \
+                            ON users.id = reviews.user_id \
+                            WHERE book_id = :book \
+                            ORDER BY time", {"book": book})
+        reviews = results.fetchall()
+        return render_template("book.html", book_info=book_info, reviews=reviews)

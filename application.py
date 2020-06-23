@@ -118,9 +118,9 @@ def search():
     if book_input is None:
         return render_template("error.html", message="Please provide a book")
     book_text = "%{}%".format(book).lower()
-    db_result = db.execute("SELECT isbn, LOWER(title), LOWER(author), year FROM books WHERE \
-                        isbn LIKE :book_text OR title LIKE :book_text OR \
-                        author LIKE :book_text LIMIT 10", {"query": book_text})
+    db_result = db.execute("""SELECT isbn, LOWER(title), LOWER(author), year FROM books WHERE 
+                        isbn LIKE :book_text OR title LIKE :book_text OR 
+                        author LIKE :book_text LIMIT 10""", {"query": book_text})
     if db_result.rowcount == 0:
         return render_template("error.html", message="There are no books with this description")
     books = db_result.fetchall()
@@ -154,8 +154,7 @@ def book(isbn):
         flash('Review submitted!', 'info')
         return redirect("/book/" + isbn)
     else:
-        row = db.execute("SELECT isbn, title, author, year FROM books WHERE \
-                        isbn = :isbn", {"isbn": isbn})
+        row = db.execute("SELECT isbn, title, author, year FROM books WHERE isbn = :isbn", {"isbn": isbn})
         book_info = row.fetchall()
         key = os.getenv("GOODREADS_KEY")
         query = requests.get("https://www.goodreads.com/book/review_counts.json",
@@ -166,12 +165,32 @@ def book(isbn):
         row = db.execute("SELECT id FROM books WHERE isbn = :isbn", {"isbn": isbn})
         book = row.fetchone()  # (id,)
         book = book[0]
-        results = db.execute("SELECT users.username, comment, rating, \
-                            to_char(time, 'DD Mon YY - HH24:MI:SS') as time \
-                            FROM users \
-                            INNER JOIN reviews \
-                            ON users.id = reviews.user_id \
-                            WHERE book_id = :book \
-                            ORDER BY time", {"book": book})
+        results = db.execute("""
+                            SELECT users.username, comment, rating, to_char(time, 'DD Mon YY - HH24:MI:SS') as time 
+                            FROM users INNER JOIN reviews ON users.id = reviews.user_id \
+                            WHERE book_id = :book ORDER BY time""", {"book": book})
         reviews = results.fetchall()
         return render_template("book.html", book_info=book_info, reviews=reviews)
+
+
+@app.route("/api/<isbn>", methods=['GET'])
+@login_required
+def api_call(isbn):
+    """
+    Function that returns the json result if the user navigates with api call
+    :param isbn: isbn code the code
+    :return: json result
+    """
+
+    row = db.execute(""" 
+                    SELECT title, author, year, isbn, COUNT(reviews.id) as review_count, 
+                    AVG(reviews.rating) as average_score FROM books 
+                    INNER JOIN reviews ON books.id = reviews.book_id \
+                    WHERE isbn = :isbn GROUP BY title, author, year, isbn""",
+                     {"isbn": isbn})
+    if row.rowcount != 1:
+        return jsonify({"Error": "Invalid book ISBN"}), 422
+    tmp = row.fetchone()
+    result = dict(tmp.items())
+    result['average_score'] = float('%.2f' % (result['average_score']))
+    return jsonify(result)

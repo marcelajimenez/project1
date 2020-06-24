@@ -7,8 +7,7 @@ from decorator import login_required
 from HashPassword import HashPassword
 
 app = Flask(__name__)
-os.environ[
-    'DATABASE_URL'] = "postgres://fhtmmpjjvejjxs:a4fc62fd0a563452b14a6900423cd903199060e28207fb93fc06ccf9ae034723@ec2-3-222-30-53.compute-1.amazonaws.com:5432/d11g6lfpjmbrjn"
+os.environ['DATABASE_URL'] = "postgres://fhtmmpjjvejjxs:a4fc62fd0a563452b14a6900423cd903199060e28207fb93fc06ccf9ae034723@ec2-3-222-30-53.compute-1.amazonaws.com:5432/d11g6lfpjmbrjn"
 
 # Check for environment variable
 if not os.getenv("DATABASE_URL"):

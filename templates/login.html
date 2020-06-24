@@ -1,21 +1,22 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Book Reviews Login Information!</title>
-</head>
-    <body>
-     <form action="" method="post">
-          <input type="text" name="name" placeholder="Enter Username">
-          <button>Submit</button>
-      <form>
-    </body>
+{% extends "layout.html" %}
+{% block title%}
+    Login
+{% endblock%}
 
-    <body>
-     <form action="" method="post">
-          <input type="text" name="password" placeholder="Enter Password">
-          <button>Submit</button>
-      <form>
-    </body>
+{% block content %}
 
-</html>
+    <h3 style="color:#ff6699">Log in</h3>
+    <form action="/login" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" name="password" placeholder="Password" type="password"/>
+        </div>
+        <button style= "background-color:#ffe6ee; border-color:#ff6699; color:#ff6699"
+        class="btn btn-primary" type="submit">Log In</button>
+        <a style="color:#ff6699" href="/register">Create an account</a>
+    </form>
+
+{% endblock %}
+

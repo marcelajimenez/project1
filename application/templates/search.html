@@ -6,10 +6,10 @@
 
 {% block content %}
 
-<h3>Search Results</h3>
-<div class="dropdown-divider"></div>
+<h3 style="color:#ff6699">Search Results</h3>
+<div style="color:#ff6699" class="dropdown-divider"></div>
 
-<div class="container results-container">
+<div style="color:#ff6699" class="container results-container">
 
     {% for book in books %}
         <div class="card border-primary mb-3" style="width: 12rem">
@@ -20,7 +20,7 @@
                 <h6 class="card-text">{{book['isbn']}}</h6>
             </div>
             <div class="card-footer">
-                <a href="/book/{{book['isbn']}}" class="card-link">Go to book page</a>
+                <a style="color:#ff6699" href="/book/{{book['isbn']}}" class="card-link">Go to book page</a>
             </div>
         </div>
     {% endfor %}

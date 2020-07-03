@@ -8,6 +8,7 @@ from application.helpers.decorator import login_required
 from application.helpers.HashPassword import HashPassword
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+import requests
 
 Session(app)
 engine = create_engine(os.getenv("DATABASE_URL"))
@@ -160,17 +161,22 @@ def book(isbn):
         book_info = row.fetchall()
         key = os.getenv("GOODREADS_KEY")
         query = requests.get("https://www.goodreads.com/book/review_counts.json",
-                             params={"key": key, "isbns": isbn})
+                             params={"key": key, "isbn": isbn})
         response = query.json()
         response = response['books'][0]
         book_info.append(response)
-        row = db.execute("SELECT id FROM books WHERE isbn = :isbn", {"isbn": isbn})
-        book = row.fetchone()  # (id,)
-        book = book[0]
-        results = db.execute("""
-                            SELECT users.username, comment, rating, to_char(time, 'DD Mon YY - HH24:MI:SS') as time 
-                            FROM users INNER JOIN reviews ON users.id = reviews.user_id \
-                            WHERE book_id = :book ORDER BY time""", {"book": book})
+        row = db.execute("SELECT user_id FROM books WHERE isbn = :isbn", {"isbn": isbn})
+        _book = row.fetchone()  # (id,)
+        _book = book[0]
+        results = db.execute(
+                            "SELECT users.username, comment, rating, \
+                            to_char(time, 'DD Mon YY - HH24:MI:SS') as time \
+                            FROM users \
+                            INNER JOIN reviews \
+                            ON users.user_id = reviews.user_id \
+                            WHERE book_id = :book \
+                            ORDER BY time",
+                            {"book": _book})
         reviews = results.fetchall()
         return render_template("book.html", book_info=book_info, reviews=reviews)
 
@@ -185,9 +191,9 @@ def api_call(isbn):
     """
 
     row = db.execute(""" 
-                    SELECT title, author, year, isbn, COUNT(reviews.id) as review_count, 
+                    SELECT title, author, year, isbn, COUNT(reviews.user_id) as review_count, 
                     AVG(reviews.rating) as average_score FROM books 
-                    INNER JOIN reviews ON books.id = reviews.book_id \
+                    INNER JOIN reviews ON books.user_id = reviews.book_id \
                     WHERE isbn = :isbn GROUP BY title, author, year, isbn""",
                      {"isbn": isbn})
     if row.rowcount != 1:

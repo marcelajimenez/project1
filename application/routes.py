@@ -108,7 +108,7 @@ def search():
     Link where the user can search for book reviews using isbn, title, author
     :return: information on the book
     """
-    f = open("books.csv")
+    f = open("static/books.csv")
     reader = csv.reader(f)
     for isbn, title, author, year in reader:
         db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",

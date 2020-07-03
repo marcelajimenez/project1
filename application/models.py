@@ -17,3 +17,6 @@ class Books(db.Model):
     title = db.Column(db.String, nullable=False)
     author = db.Column(db.String, nullable=False)
     year = db.Column(db.String, nullable=False)
+
+    def __repr__(self):
+        return '<Book {}>'.format(self.title)

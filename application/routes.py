@@ -109,18 +109,20 @@ def search():
     :return: information on the book
     """
     f = open("static/books.csv")
-    reader = csv.reader(f)
-    for isbn, title, author, year in reader:
+    csv_reader = csv.reader(f)
+
+    for isbn, title, author, year in csv_reader:
         db.execute("INSERT INTO books (isbn, title, author, year) VALUES (:isbn, :title, :author, :year)",
                    {"isbn": isbn, "title": title, "author": author, "year": year})
     db.commit()
-    book = request.args.get("book")
-    if not book:
+    _book = request.args.get("book")
+    if not _book:
         return render_template("error.html", message="Please provide a book")
-    text = "%{}%".format(book).lower()
-    db_result = db.execute("""SELECT isbn, LOWER(title), LOWER(author), year FROM books WHERE 
-                        isbn LIKE :text OR title LIKE :text OR 
-                        author LIKE :text LIMIT 10""", {"query": text})
+    query = "%" + request.args.get("book") + "%"
+    query = query.title()
+    db_result = db.execute("""SELECT isbn, title, author, year FROM books WHERE 
+                        isbn LIKE :query OR title LIKE :query OR 
+                        author LIKE :query LIMIT 10""", {"query": query})
     if db_result.rowcount == 0:
         return render_template("error.html", message="There are no books with this description")
     books = db_result.fetchall()
